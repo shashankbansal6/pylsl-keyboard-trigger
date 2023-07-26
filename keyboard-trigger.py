@@ -4,7 +4,7 @@ import uuid  # UIDs manipulation
 import sys  # interpreter objects
 
 # import LSL's Stream Info and Outlet classes, data and sampling rate types
-from pylsl import StreamInfo, StreamOutlet, IRREGULAR_RATE, cf_double64
+from pylsl import StreamInfo, StreamOutlet, IRREGULAR_RATE, cf_double64, cf_string
 from pynput import keyboard as kb  # for capturing the keyboard events
 
 
@@ -94,13 +94,14 @@ def send_trigger(eyes_state):
     Parameters:
         eyes_state (float): Trigger value to send (0.0 or 1.0).
     """
+    pass
     # UNIX epoch (aka seconds since 01.01.1970 @ 00:00:00 UTC)
-    timestamp = time.time()
-    # send sample, always as a list/array, even if only 1 value is sent
-    outlet.push_sample([timestamp, eyes_state])
-    eyes_label = "👁 opened" if eyes_state == 1.0 else "❌ closed"
-    print(f"=> Eyes status: {eyes_label}")
-    print("=> Sample pushed!")
+    # timestamp = time.time()
+    # # send sample, always as a list/array, even if only 1 value is sent
+    # outlet.push_sample([timestamp, eyes_state])
+    # eyes_label = "👁 opened" if eyes_state == 1.0 else "❌ closed"
+    # print(f"=> Eyes status: {eyes_label}")
+    # print("=> Sample pushed!")
 
 
 def check_target(kcode):
@@ -118,6 +119,11 @@ def check_target(kcode):
         send_trigger(to_send)
 
 
+def send_all_keys(key):
+    timestamp = time.time()
+    outlet.push_sample([str(timestamp), str(key)])
+    
+
 def key_event_answer(key):
     """
     If a key code is given, check if it is target, otherwise (ESC) quit.
@@ -130,9 +136,12 @@ def key_event_answer(key):
     """
     if key:
         print(f"Key {action}: {key}")
-        check_target(key)
-    else:  # ESC pressed/released
-        print(f"Key {action}: ESC")
+        # check_target(key)
+        send_all_keys(key)
+    else:
+        # send ESC key as trigger
+        send_all_keys(key) 
+        print(f"Key {action}: ESC") # ESC pressed/released
         print("Script terminated.")
         return False
 
@@ -179,8 +188,8 @@ if __name__ == "__main__":
     # display parameters
     print("Setup\n=====")
     print(f"Keyboard event: {key_event}")
-    print(f"Eyes opened key: {eyes_opened}")
-    print(f"Eyes closed key: {eyes_closed}\n")
+    # print(f"Eyes opened key: {eyes_opened}")
+    # print(f"Eyes closed key: {eyes_closed}\n")
 
     # create pressed or released label from "press" or "release"
     action = f"{key_event}ed" if key_event == "press" else f"{key_event}d"
@@ -194,7 +203,7 @@ if __name__ == "__main__":
         type="Markers",  # stream type
         channel_count=2,  # number of values to stream
         nominal_srate=IRREGULAR_RATE,  # sampling rate in Hz or IRREGULAR_RATE
-        channel_format=cf_double64,  # data type sent (dobule, float, int, str)
+        channel_format=cf_string, #cf_double64,  # data type sent (dobule, float, int, str)
         source_id=UID,  # unique identifier
     )
 
